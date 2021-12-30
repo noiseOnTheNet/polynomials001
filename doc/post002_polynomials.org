@@ -1,0 +1,106 @@
+* polynomials
+  polynomials are a fundamental mathematical entity used for a number
+  of interesting applications including:
+  - approximation of more complex functions
+  - interpolation
+  - error correction codes
+  - graphical interpolation of curves (splines)
+
+  I'm going to work with monovariate polynomials, i.e. polynomials of
+  one variable only
+** the structure
+  a polynomial is completely defined by a string of values in a
+  field. These represents the polynomial coefficient from the lowest
+  to the highest grade (let's call it $n$); the highest grade
+  coeddicient is supposed to be different from the zero of the field,
+  and all coefficient of degree greather than $n$ are supposed to be
+  zero.
+  
+  Main operation needed to define a polynomial are sum and
+  multiplication thus it can be possible to use fields different from
+  usual built-in types (integer and floating point numbers) as long as
+  multiplication and sum are defined.
+
+  Thus the data structure will contain a vector of values where sum
+  and multiplication are defined. The vector is needed because we
+  cannot know the length of the coefficient string in advance.
+
+  At first I will add only a public constructor: coefficients should
+  be immutable from the user perspective.
+  #+name: poly0-struct
+  #+begin_src rust
+    #[derive(Debug)]
+    pub struct Poly <T>{
+        coeff : Vec<T>
+    }
+
+    impl<T> Poly<T>{
+        pub fn new(coeff : Vec<T>) -> Poly<T>{
+            Poly{ coeff:coeff }
+        }
+    }
+  #+end_src
+
+  I can also add a test to this file in order to make sure it is
+  compiled properly. I will import Write in order to use a print debug
+  and check all is ok
+  #+name: poly0-test
+  #+begin_src rust
+        #[cfg(test)]
+        mod tests {
+            use super::Poly;
+            use std::fmt::Write as FmtWrite;
+            #[test]
+            fn it_works() {
+                let x = Poly::new(vec![1,2,3]);
+                let mut s = String::new();
+                write!(&mut s, "{:?}", x);
+                assert_eq!(s, "");
+            }
+        }
+  #+end_src
+  #+begin_src rust :noweb tangle :tangle ../src/poly0.rs :exports none
+    <<poly0-struct>>
+    
+    <<poly0-test>>
+  #+end_src
+** the basic operations
+   I'd like to evaluate a polynomial in a point of its field
+  #+name: poly1-struct
+  #+begin_src rust
+    #[derive(Debug)]
+    pub struct Poly <T>{
+        coeff : Vec<T>
+    }
+
+    impl<T> Poly<T>{
+        pub fn new(coeff : Vec<T>) -> Poly<T>{
+            Poly{ coeff:coeff }
+        }
+        pub fn eval(self : &Poly<T>, x : T) -> T {
+            x
+        }
+    }
+  #+end_src
+
+  I can also add a test to this file in order to make sure it is
+  compiled properly
+  #+name: poly1-test
+  #+begin_src rust
+    #[cfg(test)]
+    mod tests {
+        #[test]
+        fn it_works() {
+            assert_eq!(2 + 2, 4);
+        }
+    }
+  #+end_src
+  #+begin_src rust :noweb tangle :tangle ../src/poly1.rs :exports none
+    <<poly1-test>>
+    
+    <<poly1-struct>>
+  #+end_src
+  #+begin_src rust :noweb tangle :tangle ../src/lib.rs :exports none
+    pub mod poly0;
+    pub mod poly1;
+  #+end_src
