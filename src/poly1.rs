@@ -1,13 +1,10 @@
 #[cfg(test)]
 mod tests {
     use super::Poly;
-    use std::fmt::Write as FmtWrite;
     #[test]
     fn creation_and_debug() {
         let x = Poly::new(vec![1,2,3]);
-        let mut s = String::new();
-        write!(&mut s, "{:?}", x);
-        assert_eq!(s, "Poly { coeff: [1, 2, 3] }");
+        assert_eq!(format!("{:?}", x), "Poly { coeff: [1, 2, 3] }");
     }
 
     #[test]
@@ -15,9 +12,16 @@ mod tests {
         let p = Poly::new(vec![1,2,3]);
         assert_eq!(p.eval(10,0), 321);
     }
+    
+    #[test]
+    fn test_formatting() {
+        let x = Poly::new(vec![1,2,3]);
+        assert_eq!(format!("{}", x), "(1)^0 + (2)^1 + (3)^2");
+    }
 }
 
 use std::ops::{Mul, Add};
+use std::fmt;
 
 #[derive(Debug)]
 pub struct Poly <T>{
@@ -32,5 +36,15 @@ impl<T: Mul<Output = T> + Add<Output = T> + Copy> Poly<T>{
         self.coeff.iter()
             .rev()
             .fold(zero, |acc, c| acc * x + *c)
+    }
+}
+
+impl<T: fmt::Debug> fmt::Display for Poly<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let result : Vec<String> = self.coeff.iter()
+            .enumerate()
+            .map(|(i, c)| format!("({:?})^{}",c,i))
+            .collect();
+        write!(f, "{}", result.join(" + "))
     }
 }
