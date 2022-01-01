@@ -44,3 +44,11 @@ impl<T: fmt::Debug> fmt::Display for Poly<T> {
         write!(f, "{}", result.join(" + "))
     }
 }
+
+use std::ops::Fn;
+impl<T> Fn<(T, )> for Poly<T>{
+    type Output = T;
+    extern "rust-call" fn call(&self, args : (T,)){
+        self.eval(args[0])
+    }
+}

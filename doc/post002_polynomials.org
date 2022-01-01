@@ -1,5 +1,9 @@
 * polynomials
-  polynomials are a fundamental mathematical entity used for a number
+  This post is the first of a series of about polynomials.  I'm using
+  it as a mean to explore the rust programming language while also
+  learning math subjects.
+  
+  Polynomials are a fundamental mathematical entity used for a number
   of interesting applications including:
   - approximation of more complex functions
   - interpolation
@@ -116,20 +120,63 @@
         assert_eq!(format!("{}", x), "(1)^0 + (2)^1 + (3)^2");
     }
   #+end_src
+  #+name poly1-test-display
+  #+begin_src rust :exports none
+    #[test]
+    fn creation_and_debug() {
+        let x = Poly::new(vec![1,2,3]);
+        assert_eq!(format!("{:?}", x), "Poly { coeff: [1, 2, 3] }");
+    }
+  #+end_src
   #+begin_src rust :noweb tangle :tangle ../src/poly1.rs :exports none
     #[cfg(test)]
     mod tests {
         use super::Poly;
-        #[test]
-        fn creation_and_debug() {
-            let x = Poly::new(vec![1,2,3]);
-            assert_eq!(format!("{:?}", x), "Poly { coeff: [1, 2, 3] }");
-        }
+        <<poly1-test-display>>
 
         <<poly1-test>>
     }
 
     <<poly1-struct>>
+  #+end_src
+** a polynomial can be a function too
+   Rust allows to use a data structure as a function by implementing
+   some traits in the ~std::ops~ module:
+   - ~Fn~ when the data structure is borrowed without mutability
+   - ~FnMut~ when the data structure is borrowed with mutability
+   - ~FnOne~ when the ownership is transferred to the data structure
+   Please note: as for today (2022-1-1) the following code does not
+   work on a stable release, so it is untested.
+
+   We first have to enable some unstable feature
+   #+name: poly2-prelude
+   #+begin_src rust
+     #![feature(unboxed_closures, fn_traits)]
+   #+end_src
+
+   Then we try to implement the trait
+   #+name: poly2-function-implementation
+   #+begin_src rust
+     use std::ops::Fn;
+     impl<T> Fn<(T, )> for Poly<T>{
+         type Output = T;
+         extern "rust-call" fn call(&self, args : (T,)){
+             self.eval(args[0])
+         }
+     }
+   #+end_src
+  #+begin_src rust :noweb tangle :tangle ../src/poly2.rs :exports none
+    #[cfg(test)]
+    mod tests {
+        use super::Poly;
+        <<poly1-test-display>>
+
+        <<poly1-test>>
+    }
+
+    <<poly1-struct>>
+
+    <<poly2-function-implementation>>
   #+end_src
   #+begin_src rust :noweb tangle :tangle ../src/lib.rs :exports none
     pub mod poly0;
