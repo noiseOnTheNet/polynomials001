@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2021-12-31 Fri 11:51 -->
+<!-- 2022-01-27 Thu 09:13 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>&lrm;</title>
@@ -244,20 +244,34 @@
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents">
 <ul>
-<li><a href="#org26a4469">1. polynomials</a>
+<li><a href="#org9ed18cc">1. polynomials</a>
 <ul>
-<li><a href="#org59e2c94">1.1. the structure</a></li>
-<li><a href="#org8dfc56a">1.2. the basic operations</a></li>
+<li><a href="#orgc3bfe81">1.1. the structure</a></li>
+<li><a href="#org0da92bb">1.2. the basic operations</a></li>
+<li><a href="#orgd2c9e9a">1.3. let's see how it looks like</a></li>
+<li><a href="#orgc1b8ef1">1.4. a polynomial can be a function too</a></li>
 </ul>
 </li>
 </ul>
 </div>
 </div>
-<div id="outline-container-org26a4469" class="outline-2">
-<h2 id="org26a4469"><span class="section-number-2">1</span> polynomials</h2>
+<div id="outline-container-org9ed18cc" class="outline-2">
+<h2 id="org9ed18cc"><span class="section-number-2">1</span> polynomials</h2>
 <div class="outline-text-2" id="text-1">
+
+<div id="org247af1f" class="figure">
+<p><img src="post002_plot0.png" alt="post002_plot0.png" />
+</p>
+</div>
+
 <p>
-polynomials are a fundamental mathematical entity used for a number
+This post is the first of a series of about polynomials.  I'm using
+it as a mean to explore the rust programming language while also
+learning math subjects.
+</p>
+
+<p>
+Polynomials are a fundamental mathematical entity used for a number
 of interesting applications including:
 </p>
 <ul class="org-ul">
@@ -272,8 +286,8 @@ I'm going to work with monovariate polynomials, i.e. polynomials of
 one variable only
 </p>
 </div>
-<div id="outline-container-org59e2c94" class="outline-3">
-<h3 id="org59e2c94"><span class="section-number-3">1.1</span> the structure</h3>
+<div id="outline-container-orgc3bfe81" class="outline-3">
+<h3 id="orgc3bfe81"><span class="section-number-3">1.1</span> the structure</h3>
 <div class="outline-text-3" id="text-1-1">
 <p>
 a polynomial is completely defined by a string of values in a
@@ -302,7 +316,7 @@ At first I will add only a public constructor: coefficients should
 be immutable from the user perspective.
 </p>
 <div class="org-src-container">
-<pre class="src src-rust" id="orgd45d18e"><span style="color: #23d7d7;">#[derive(Debug)]</span>
+<pre class="src src-rust" id="org789d077"><span style="color: #23d7d7;">#[derive(Debug)]</span>
 <span style="color: #ffad29; font-weight: bold;">pub</span> <span style="color: #ffad29; font-weight: bold;">struct</span> <span style="color: #34cae2;">Poly</span> &lt;<span style="color: #34cae2;">T</span>&gt;{
     <span style="color: #dbdb95;">coeff</span> : <span style="color: #34cae2;">Vec</span>&lt;<span style="color: #34cae2;">T</span>&gt;
 }
@@ -321,28 +335,25 @@ compiled properly. I will import Write in order to use a print debug
 and check all is ok
 </p>
 <div class="org-src-container">
-<pre class="src src-rust" id="org60fcb21"><span style="color: #23d7d7;">#[cfg(test)]</span>
+<pre class="src src-rust" id="org6e0c0e3"><span style="color: #23d7d7;">#[cfg(test)]</span>
 <span style="color: #ffad29; font-weight: bold;">mod</span> <span style="color: #008b8b;">tests</span> {
     <span style="color: #ffad29; font-weight: bold;">use</span> <span style="color: #ffad29; font-weight: bold;">super</span>::<span style="color: #34cae2;">Poly</span>;
-    <span style="color: #ffad29; font-weight: bold;">use</span> <span style="color: #008b8b;">std</span>::<span style="color: #008b8b;">fmt</span>::<span style="color: #34cae2;">Write</span> <span style="color: #ffad29; font-weight: bold;">as</span> <span style="color: #34cae2;">FmtWrite</span>;
     <span style="color: #23d7d7;">#[test]</span>
     <span style="color: #ffad29; font-weight: bold;">fn</span> <span style="color: #00ede1; font-weight: bold;">creation_and_debug</span>() {
         <span style="color: #ffad29; font-weight: bold;">let</span> <span style="color: #dbdb95;">x</span> = <span style="color: #34cae2;">Poly</span>::new(<span style="color: #23d7d7;">vec!</span>[1,2,3]);
-        <span style="color: #ffad29; font-weight: bold;">let</span> <span style="color: #ffad29; font-weight: bold;">mut</span> <span style="color: #dbdb95;">s</span> = <span style="color: #34cae2;">String</span>::new();
-        <span style="color: #23d7d7;">write!</span>(&amp;<span style="color: #ffad29; font-weight: bold;">mut</span> s, <span style="color: #e67128;">"</span><span style="color: #e67128; font-style: italic;">{:?}</span><span style="color: #e67128;">"</span>, x);
-        <span style="color: #23d7d7;">assert_eq!</span>(s, <span style="color: #e67128;">"Poly { coeff: [1, 2, 3] }"</span>);
+        <span style="color: #23d7d7;">assert_eq!</span>(<span style="color: #23d7d7;">format!</span>(<span style="color: #e67128;">"</span><span style="color: #e67128; font-style: italic;">{:?}</span><span style="color: #e67128;">"</span>, x), <span style="color: #e67128;">"Poly { coeff: [1, 2, 3] }"</span>);
     }
 }
 </pre>
 </div>
 </div>
 </div>
-<div id="outline-container-org8dfc56a" class="outline-3">
-<h3 id="org8dfc56a"><span class="section-number-3">1.2</span> the basic operations</h3>
+<div id="outline-container-org0da92bb" class="outline-3">
+<h3 id="org0da92bb"><span class="section-number-3">1.2</span> the basic operations</h3>
 <div class="outline-text-3" id="text-1-2">
 <p>
 I'd like to evaluate a polynomial in a point of its field. In order
-to do that I need the data to have the following properties:
+to do that I need to use the following properties:
 </p>
 <ul class="org-ul">
 <li>sum is defined</li>
@@ -351,8 +362,26 @@ to do that I need the data to have the following properties:
 <li>the field values can be copied (i.e. there is a way to safely
 copy their binary representation)</li>
 </ul>
+
+<p>
+In order to evaluate the value of a polynomial of degree n I will
+make use of the following equivalence:
+</p>
+
+\begin{equation}
+\sum_{i=0}^{n}c_{i}x^{i} = \lambda (x) : fold(\lambda (a,b) : xa+b, rev(\mathbf{c}),0)
+\end{equation}
+
+<p>
+Moreover I'd like to print a textual version of the object in a
+human-readable way, maybe not as pretty as formatted \(\LaTeX\). By
+implementing the <code>Display</code> trait it would be easier to use the
+format functions later.
+</p>
+
 <div class="org-src-container">
-<pre class="src src-rust" id="orgfb9b04e"><span style="color: #ffad29; font-weight: bold;">use</span> <span style="color: #008b8b;">std</span>::<span style="color: #008b8b;">ops</span>::{<span style="color: #34cae2;">Mul</span>, <span style="color: #34cae2;">Add</span>};
+<pre class="src src-rust" id="orgc1f724a"><span style="color: #ffad29; font-weight: bold;">use</span> <span style="color: #008b8b;">std</span>::<span style="color: #008b8b;">ops</span>::{<span style="color: #34cae2;">Mul</span>, <span style="color: #34cae2;">Add</span>};
+<span style="color: #ffad29; font-weight: bold;">use</span> <span style="color: #008b8b;">std</span>::fmt;
 
 <span style="color: #23d7d7;">#[derive(Debug)]</span>
 <span style="color: #ffad29; font-weight: bold;">pub</span> <span style="color: #ffad29; font-weight: bold;">struct</span> <span style="color: #34cae2;">Poly</span> &lt;<span style="color: #34cae2;">T</span>&gt;{
@@ -369,18 +398,133 @@ copy their binary representation)</li>
             .fold(zero, |acc, c| acc * x + *c)
     }
 }
+
+<span style="color: #ffad29; font-weight: bold;">impl</span>&lt;<span style="color: #dbdb95;">T</span>: <span style="color: #008b8b;">fmt</span>::<span style="color: #34cae2;">Debug</span>&gt; <span style="color: #008b8b;">fmt</span>::<span style="color: #34cae2;">Display</span> <span style="color: #ffad29; font-weight: bold;">for</span> <span style="color: #34cae2;">Poly</span>&lt;<span style="color: #34cae2;">T</span>&gt; {
+    <span style="color: #ffad29; font-weight: bold;">fn</span> <span style="color: #00ede1; font-weight: bold;">fmt</span>(&amp;<span style="color: #ffad29; font-weight: bold;">self</span>, <span style="color: #dbdb95;">f</span>: &amp;<span style="color: #ffad29; font-weight: bold;">mut</span> <span style="color: #008b8b;">fmt</span>::<span style="color: #34cae2;">Formatter</span>&lt;'<span style="color: #dbdb95;">_</span>&gt;) -&gt; <span style="color: #008b8b;">fmt</span>::<span style="color: #34cae2;">Result</span> {
+        <span style="color: #ffad29; font-weight: bold;">let</span> <span style="color: #dbdb95;">result</span> : <span style="color: #34cae2;">Vec</span>&lt;<span style="color: #34cae2;">String</span>&gt; = <span style="color: #ffad29; font-weight: bold;">self</span>.coeff.iter()
+            .enumerate()
+            .map(|(i, c)| <span style="color: #23d7d7;">format!</span>(<span style="color: #e67128;">"(</span><span style="color: #e67128; font-style: italic;">{:?}</span><span style="color: #e67128;">)x^</span><span style="color: #e67128; font-style: italic;">{}</span><span style="color: #e67128;">"</span>,c,i))
+            .collect();
+        <span style="color: #23d7d7;">write!</span>(f, <span style="color: #e67128;">"</span><span style="color: #e67128; font-style: italic;">{}</span><span style="color: #e67128;">"</span>, result.join(<span style="color: #e67128;">" + "</span>))
+    }
+}
 </pre>
 </div>
 
 <p>
-I can also add a test to this file in order to make sure it is
-compiled properly
+let's check if the current implementation works
 </p>
 <div class="org-src-container">
-<pre class="src src-rust" id="org8f4e838"><span style="color: #23d7d7;">#[test]</span>
+<pre class="src src-rust" id="org0f35375"><span style="color: #23d7d7;">#[test]</span>
 <span style="color: #ffad29; font-weight: bold;">fn</span> <span style="color: #00ede1; font-weight: bold;">test_evaluation</span>() {
     <span style="color: #ffad29; font-weight: bold;">let</span> <span style="color: #dbdb95;">p</span> = <span style="color: #34cae2;">Poly</span>::new(<span style="color: #23d7d7;">vec!</span>[1,2,3]);
     <span style="color: #23d7d7;">assert_eq!</span>(p.eval(10,0), 321);
+}
+
+<span style="color: #23d7d7;">#[test]</span>
+<span style="color: #ffad29; font-weight: bold;">fn</span> <span style="color: #00ede1; font-weight: bold;">test_formatting</span>() {
+    <span style="color: #ffad29; font-weight: bold;">let</span> <span style="color: #dbdb95;">x</span> = <span style="color: #34cae2;">Poly</span>::new(<span style="color: #23d7d7;">vec!</span>[1,2,3]);
+    <span style="color: #23d7d7;">assert_eq!</span>(<span style="color: #23d7d7;">format!</span>(<span style="color: #e67128;">"</span><span style="color: #e67128; font-style: italic;">{}</span><span style="color: #e67128;">"</span>, x), <span style="color: #e67128;">"(1)x^0 + (2)x^1 + (3)x^2"</span>);
+}
+</pre>
+</div>
+<p>
+#+name poly1-test-display
+</p>
+</div>
+</div>
+<div id="outline-container-orgd2c9e9a" class="outline-3">
+<h3 id="orgd2c9e9a"><span class="section-number-3">1.3</span> let's see how it looks like</h3>
+<div class="outline-text-3" id="text-1-3">
+<p>
+I'm going to plot a few polynomials using the popular <code>plotters</code>
+library.
+</p>
+
+<p>
+This code was used to create the post initial image
+</p>
+<div class="org-src-container">
+<pre class="src src-rust"><span style="color: #ffad29; font-weight: bold;">use</span> <span style="color: #008b8b;">plotters</span>::<span style="color: #008b8b;">prelude</span>::*;
+<span style="color: #ffad29; font-weight: bold;">use</span> <span style="color: #008b8b;">poly</span>;
+
+<span style="color: #ffad29; font-weight: bold;">fn</span> <span style="color: #00ede1; font-weight: bold;">main</span>() -&gt; <span style="color: #34cae2;">Result</span>&lt;(), <span style="color: #34cae2;">Box</span>&lt;<span style="color: #ffad29; font-weight: bold;">dyn</span> <span style="color: #008b8b;">std</span>::<span style="color: #008b8b;">error</span>::<span style="color: #34cae2;">Error</span>&gt;&gt; {
+
+    <span style="color: #74af68;">//</span><span style="color: #74af68;">polynomial definition</span>
+    <span style="color: #ffad29; font-weight: bold;">let</span> <span style="color: #dbdb95;">p0</span> = <span style="color: #008b8b;">poly</span>::<span style="color: #008b8b;">poly1</span>::<span style="color: #34cae2;">Poly</span>::new(<span style="color: #23d7d7;">vec!</span>[0.0, 2.0, 0.0, -3.0]);
+
+    <span style="color: #74af68;">//</span><span style="color: #74af68;">start of the plot</span>
+    <span style="color: #ffad29; font-weight: bold;">let</span> <span style="color: #dbdb95;">root</span> = <span style="color: #34cae2;">BitMapBackend</span>::new(<span style="color: #e67128;">"post002_plot0.png"</span>, (640, 480)).into_drawing_area();
+    root.fill(&amp;<span style="color: #34cae2;">WHITE</span>)<span style="color: #23d7d7; font-weight: bold;">?</span>;
+
+    <span style="color: #74af68;">//</span><span style="color: #74af68;">the polynomial is formatted in the caption</span>
+    <span style="color: #ffad29; font-weight: bold;">let</span> <span style="color: #ffad29; font-weight: bold;">mut</span> <span style="color: #dbdb95;">chart</span> = <span style="color: #34cae2;">ChartBuilder</span>::on(&amp;root)
+        .caption(<span style="color: #23d7d7;">format!</span>(<span style="color: #e67128;">"y=</span><span style="color: #e67128; font-style: italic;">{}</span><span style="color: #e67128;">"</span>,p0), (<span style="color: #e67128;">"sans-serif"</span>, 25).into_font())
+        .margin(5)
+        .x_label_area_size(30)
+        .y_label_area_size(30)
+        .build_cartesian_2d(-1f32..1f32, -1f32..1f32)<span style="color: #23d7d7; font-weight: bold;">?</span>;
+
+    chart.configure_mesh().draw()<span style="color: #23d7d7; font-weight: bold;">?</span>;
+
+    <span style="color: #74af68;">//</span><span style="color: #74af68;">here the polynomial is evaluated</span>
+    <span style="color: #74af68;">//</span><span style="color: #74af68;">the polynomial is formatted in the plot label</span>
+    chart
+        .draw_series(<span style="color: #34cae2;">LineSeries</span>::new(
+            (-50..=50).map(|x| x <span style="color: #ffad29; font-weight: bold;">as</span> <span style="color: #34cae2;">f32</span> / 50.0).map(|x| (x, p0.eval(x,0.0))),
+            &amp;<span style="color: #34cae2;">RED</span>,
+        ))<span style="color: #23d7d7; font-weight: bold;">?</span>
+        .label(<span style="color: #23d7d7;">format!</span>(<span style="color: #e67128;">"y = </span><span style="color: #e67128; font-style: italic;">{}</span><span style="color: #e67128;">"</span>,p0))
+        .legend(|(x, y)| <span style="color: #34cae2;">PathElement</span>::new(<span style="color: #23d7d7;">vec!</span>[(x, y), (x + 20, y)], &amp;<span style="color: #34cae2;">RED</span>));
+
+    chart
+        .configure_series_labels()
+        .background_style(&amp;<span style="color: #34cae2;">WHITE</span>.mix(0.8))
+        .border_style(&amp;<span style="color: #34cae2;">BLACK</span>)
+        .draw()<span style="color: #23d7d7; font-weight: bold;">?</span>;
+
+    <span style="color: #34cae2;">Ok</span>(())
+}
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgc1b8ef1" class="outline-3">
+<h3 id="orgc1b8ef1"><span class="section-number-3">1.4</span> a polynomial can be a function too</h3>
+<div class="outline-text-3" id="text-1-4">
+<p>
+Rust allows to use a data structure as a function by implementing
+some traits in the <code>std::ops</code> module:
+</p>
+<ul class="org-ul">
+<li><code>Fn</code> when the data structure is borrowed without mutability</li>
+<li><code>FnMut</code> when the data structure is borrowed with mutability</li>
+<li><code>FnOne</code> when the ownership is transferred to the data structure</li>
+</ul>
+<p>
+Please note: as for today (2022-1-1) the following code does not
+work on a stable release, so it is untested.
+</p>
+
+<p>
+We first have to enable some unstable feature
+</p>
+<div class="org-src-container">
+<pre class="src src-rust" id="orga244833"><span style="color: #23d7d7;">#![feature(unboxed_closures, fn_traits)]</span>
+</pre>
+</div>
+
+<p>
+Then we try to implement the trait
+</p>
+<div class="org-src-container">
+<pre class="src src-rust" id="orge2a4da7"><span style="color: #ffad29; font-weight: bold;">use</span> <span style="color: #008b8b;">std</span>::<span style="color: #008b8b;">ops</span>::<span style="color: #34cae2;">Fn</span>;
+<span style="color: #ffad29; font-weight: bold;">impl</span>&lt;<span style="color: #34cae2;">T</span>&gt; <span style="color: #34cae2;">Fn</span>&lt;(<span style="color: #34cae2;">T</span>, )&gt; <span style="color: #ffad29; font-weight: bold;">for</span> <span style="color: #34cae2;">Poly</span>&lt;<span style="color: #34cae2;">T</span>&gt;{
+    <span style="color: #ffad29; font-weight: bold;">type</span> <span style="color: #34cae2;">Output</span> = <span style="color: #34cae2;">T</span>;
+    <span style="color: #ffad29; font-weight: bold;">extern</span> <span style="color: #e67128;">"rust-call"</span> <span style="color: #ffad29; font-weight: bold;">fn</span> <span style="color: #00ede1; font-weight: bold;">call</span>(&amp;<span style="color: #ffad29; font-weight: bold;">self</span>, <span style="color: #dbdb95;">args</span> : (<span style="color: #34cae2;">T</span>,)){
+        <span style="color: #ffad29; font-weight: bold;">self</span>.eval(args[0])
+    }
 }
 </pre>
 </div>
@@ -390,7 +534,7 @@ compiled properly
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Marco Paolo Valerio Vezzoli</p>
-<p class="date">Created: 2021-12-31 Fri 11:51</p>
+<p class="date">Created: 2022-01-27 Thu 09:13</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>

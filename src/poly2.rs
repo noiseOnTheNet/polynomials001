@@ -12,7 +12,7 @@ mod tests {
     #[test]
     fn test_formatting() {
         let x = Poly::new(vec![1,2,3]);
-        assert_eq!(format!("{}", x), "(1)^0 + (2)^1 + (3)^2");
+        assert_eq!(format!("{}", x), "(1)x^0 + (2)x^1 + (3)x^2");
     }
 }
 
@@ -39,7 +39,7 @@ impl<T: fmt::Debug> fmt::Display for Poly<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let result : Vec<String> = self.coeff.iter()
             .enumerate()
-            .map(|(i, c)| format!("({:?})^{}",c,i))
+            .map(|(i, c)| format!("({:?})x^{}",c,i))
             .collect();
         write!(f, "{}", result.join(" + "))
     }

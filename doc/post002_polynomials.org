@@ -1,4 +1,6 @@
 * polynomials
+  file:post002_plot0.png
+  
   This post is the first of a series of about polynomials.  I'm using
   it as a mean to explore the rust programming language while also
   learning math subjects.
@@ -67,12 +69,25 @@
   #+end_src
 ** the basic operations
    I'd like to evaluate a polynomial in a point of its field. In order
-   to do that I need the data to have the following properties:
+   to do that I need to use the following properties:
    - sum is defined
    - multiplication is defined
    - there is a zero (neutral element of the sum)
    - the field values can be copied (i.e. there is a way to safely
      copy their binary representation)
+
+   In order to evaluate the value of a polynomial of degree n I will
+   make use of the following equivalence:
+   
+   \begin{equation}
+   \sum_{i=0}^{n}c_{i}x^{i} = \lambda (x) : fold(\lambda (a,b) : xa+b, rev(\mathbf{c}),0)
+   \end{equation}
+
+   Moreover I'd like to print a textual version of the object in a
+   human-readable way, maybe not as pretty as formatted $\LaTeX$. By
+   implementing the ~Display~ trait it would be easier to use the
+   format functions later.
+
   #+name: poly1-struct
   #+begin_src rust
     use std::ops::{Mul, Add};
@@ -98,14 +113,14 @@
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             let result : Vec<String> = self.coeff.iter()
                 .enumerate()
-                .map(|(i, c)| format!("({:?})^{}",c,i))
+                .map(|(i, c)| format!("({:?})x^{}",c,i))
                 .collect();
             write!(f, "{}", result.join(" + "))
         }
     }
   #+end_src
 
-  let's check the current implementation works
+  let's check if the current implementation works
   #+name: poly1-test
   #+begin_src rust
     #[test]
@@ -117,7 +132,7 @@
     #[test]
     fn test_formatting() {
         let x = Poly::new(vec![1,2,3]);
-        assert_eq!(format!("{}", x), "(1)^0 + (2)^1 + (3)^2");
+        assert_eq!(format!("{}", x), "(1)x^0 + (2)x^1 + (3)x^2");
     }
   #+end_src
   #+name poly1-test-display
@@ -139,6 +154,54 @@
 
     <<poly1-struct>>
   #+end_src
+** let's see how it looks like
+   I'm going to plot a few polynomials using the popular ~plotters~
+   library.
+
+   This code was used to create the post initial image
+   #+begin_src rust :tangle ../examples/plot_example.rs
+     use plotters::prelude::*;
+     use poly;
+
+     fn main() -> Result<(), Box<dyn std::error::Error>> {
+
+         //polynomial definition
+         let p0 = poly::poly1::Poly::new(vec![0.0, 2.0, 0.0, -3.0]);
+
+         //start of the plot
+         let root = BitMapBackend::new("post002_plot0.png", (640, 480)).into_drawing_area();
+         root.fill(&WHITE)?;
+    
+         //the polynomial is formatted in the caption
+         let mut chart = ChartBuilder::on(&root)
+             .caption(format!("y={}",p0), ("sans-serif", 25).into_font())
+             .margin(5)
+             .x_label_area_size(30)
+             .y_label_area_size(30)
+             .build_cartesian_2d(-1f32..1f32, -1f32..1f32)?;
+
+         chart.configure_mesh().draw()?;
+
+         //here the polynomial is evaluated
+         //the polynomial is formatted in the plot label
+         chart
+             .draw_series(LineSeries::new(
+                 (-50..=50).map(|x| x as f32 / 50.0).map(|x| (x, p0.eval(x,0.0))),
+                 &RED,
+             ))?
+             .label(format!("y = {}",p0))
+             .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &RED));
+
+         chart
+             .configure_series_labels()
+             .background_style(&WHITE.mix(0.8))
+             .border_style(&BLACK)
+             .draw()?;
+
+         Ok(())
+     }
+   #+end_src
+   
 ** a polynomial can be a function too
    Rust allows to use a data structure as a function by implementing
    some traits in the ~std::ops~ module:
@@ -181,4 +244,5 @@
   #+begin_src rust :noweb tangle :tangle ../src/lib.rs :exports none
     pub mod poly0;
     pub mod poly1;
+    //use poly1::*;
   #+end_src
