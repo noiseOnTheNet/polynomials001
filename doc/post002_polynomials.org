@@ -1,9 +1,18 @@
-* polynomials
-  file:post002_plot0.png
+#+BLOG: noise on the net
+#+POSTID: 75
+#+ORG2BLOG:
+#+DATE: [2022-01-24 Mon 21:14]
+#+OPTIONS: toc:nil num:nil todo:nil pri:nil tags:nil ^:nil
+#+CATEGORY: Series
+#+TAGS: Rust
+#+DESCRIPTION: This post is the first of a series of about polynomials.  I'm using it as a mean to explore the rust programming language (especially how generic traits relate to algebra) while also learning math subjects.
+#+TITLE: Polynomial basics
+  [[file:post002_plot1.png]]
   
   This post is the first of a series of about polynomials.  I'm using
-  it as a mean to explore the rust programming language while also
-  learning math subjects.
+  it as a mean to explore the rust programming language (especially
+  how generic traits relate to algebra) while also learning math
+  subjects.
   
   Polynomials are a fundamental mathematical entity used for a number
   of interesting applications including:
@@ -14,7 +23,7 @@
 
   I'm going to work with monovariate polynomials, i.e. polynomials of
   one variable only
-** the structure
+* the structure
   a polynomial is completely defined by a string of values in a
   field. These represents the polynomial coefficient from the lowest
   to the highest grade (let's call it $n$); the highest grade
@@ -67,7 +76,7 @@
     
     <<poly0-test>>
   #+end_src
-** the basic operations
+* the basic operations
    I'd like to evaluate a polynomial in a point of its field. In order
    to do that I need to use the following properties:
    - sum is defined
@@ -154,11 +163,10 @@
 
     <<poly1-struct>>
   #+end_src
-** let's see how it looks like
+* let's see how it looks like
    I'm going to plot a few polynomials using the popular ~plotters~
    library.
 
-   This code was used to create the post initial image
    #+begin_src rust :tangle ../examples/plot_example.rs
      use plotters::prelude::*;
      use poly;
@@ -201,23 +209,90 @@
          Ok(())
      }
    #+end_src
+
+   [[file:post002_plot0.png]]
    
-** a polynomial can be a function too
-   Rust allows to use a data structure as a function by implementing
-   some traits in the ~std::ops~ module:
+   This code was used to create the post initial image
+   #+begin_src rust :tangle ../examples/plot_example2.rs
+     use plotters::prelude::*;
+     use poly;
+
+     fn fac(n : i32) -> i32{
+         let mut result = 1;
+         for i in 1..=n{
+             result = result * i
+         }
+         result
+     }
+
+     fn main() -> Result<(), Box<dyn std::error::Error>> {
+
+         //start of the plot
+         let root = BitMapBackend::new("post002_plot1.png", (640, 480)).into_drawing_area();
+         root.fill(&WHITE)?;
+
+         //the polynomial is formatted in the caption
+         let mut chart = ChartBuilder::on(&root)
+             .caption("Approximations of sin", ("sans-serif", 25).into_font())
+             .margin(5)
+             .x_label_area_size(30)
+             .y_label_area_size(30)
+             .build_cartesian_2d(-7f32..7f32, -1.2f32..1.2f32)?;
+
+         chart.configure_mesh().draw()?;
+
+         //here the polynomial is evaluated
+         //the polynomial is formatted in the plot label
+         for (deg,color) in [(1,RED),(3,BLUE),(5,MAGENTA),(7,GREEN),(9,CYAN)].iter(){
+             let coeff : Vec<f32> = (0..=*deg)
+                 .map(|n| if n % 2 == 0 { 0.0 }
+                      else {
+                          let nf = fac(n) as f32;
+                          let sign = if ((n - 1) / 2) % 2 == 0 { 1.0 } else { -1.0 } ;
+                          sign/nf
+                      })
+                 .collect();
+             let p0 = poly::poly1::Poly::new(coeff);
+             chart
+                 .draw_series(LineSeries::new(
+                     (-50..=50).map(|x| x as f32 * 7.0 / 50.0).map(|x| (x, p0.eval(x,0.0))),
+                     &color,
+                 ))?
+                 .label(format!("sin{}",deg))
+                 .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &color.clone()));
+         }
+         chart
+             .draw_series(LineSeries::new(
+                 (-50..=50).map(|x| x as f32 * 7.0 / 50.0).map(|x| (x, x.sin())),
+                 &BLACK,
+             ))?
+             .label("sin")
+             .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &BLACK));
+         chart
+             .configure_series_labels()
+             .background_style(&WHITE.mix(0.8))
+             .border_style(&BLACK)
+             .draw()?;
+
+         Ok(())
+     }
+   #+end_src
+* a polynomial can be a function too
+   Current implementations of rust expose some traits to pass
+   functions and lambdas as objects in the ~std::ops~ module:
    - ~Fn~ when the data structure is borrowed without mutability
    - ~FnMut~ when the data structure is borrowed with mutability
    - ~FnOne~ when the ownership is transferred to the data structure
-   Please note: as for today (2022-1-1) the following code does not
-   work on a stable release, so it is untested.
-
-   We first have to enable some unstable feature
+     
+   Unfortunately as for today (January 2022) there is no way to
+   implement these traits from an object even using unstable features
    #+name: poly2-prelude
    #+begin_src rust
      #![feature(unboxed_closures, fn_traits)]
    #+end_src
 
-   Then we try to implement the trait
+   This code does not compile but it's my best attempt to shape how it
+   should look like
    #+name: poly2-function-implementation
    #+begin_src rust
      use std::ops::Fn;
