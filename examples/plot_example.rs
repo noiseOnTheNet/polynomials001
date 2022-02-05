@@ -1,10 +1,11 @@
 use plotters::prelude::*;
-use poly;
+use poly::poly2::*;
+
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     //polynomial definition
-    let p0 = poly::poly1::Poly::new(vec![0.0, 2.0, 0.0, -3.0]);
+    let p0 = Poly::new(vec![0.0, 2.0, 0.0, -3.0]);
 
     //start of the plot
     let root = BitMapBackend::new("post002_plot0.png", (640, 480)).into_drawing_area();
@@ -24,7 +25,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     //the polynomial is formatted in the plot label
     chart
         .draw_series(LineSeries::new(
-            (-50..=50).map(|x| x as f32 / 50.0).map(|x| (x, p0.eval(x,0.0))),
+            (-50..=50).map(|x| x as f32 / 50.0).map(|x| (x, p0(x))),
             &RED,
         ))?
         .label(format!("y = {}",p0))

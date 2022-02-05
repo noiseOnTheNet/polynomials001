@@ -1,6 +1,7 @@
 use plotters::prelude::*;
-use poly;
+use poly::poly2::*;
 
+// this evaluates the factorial of n
 fn fac(n : i32) -> i32{
     let mut result = 1;
     for i in 1..=n{
@@ -36,10 +37,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                      sign/nf
                  })
             .collect();
-        let p0 = poly::poly1::Poly::new(coeff);
+        let p0 = Poly::new(coeff);
         chart
             .draw_series(LineSeries::new(
-                (-50..=50).map(|x| x as f32 * 7.0 / 50.0).map(|x| (x, p0.eval(x,0.0))),
+                (-50..=50).map(|x| x as f32 * 7.0 / 50.0).map(|x| (x, p0(x))),
                 &color,
             ))?
             .label(format!("sin{}",deg))

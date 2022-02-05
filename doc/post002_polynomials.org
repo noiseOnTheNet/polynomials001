@@ -1,18 +1,25 @@
+#+DATE: [2022-01-31 Mon 21:05]
 #+BLOG: noise on the net
 #+POSTID: 75
 #+ORG2BLOG:
-#+DATE: [2022-01-24 Mon 21:14]
 #+OPTIONS: toc:nil num:nil todo:nil pri:nil tags:nil ^:nil
 #+CATEGORY: Series
 #+TAGS: Rust
 #+DESCRIPTION: This post is the first of a series of about polynomials.  I'm using it as a mean to explore the rust programming language (especially how generic traits relate to algebra) while also learning math subjects.
 #+TITLE: Polynomial basics
+
+  #+ATTR_HTML: :style float:center;
   [[file:post002_plot1.png]]
+  # post002_plot1.png https://i0.wp.com/noiseonthenet.space/noise/wp-content/uploads/2022/01/post002_plot1.png
+
+  EDITED on February 5th, 2022 to fix the call to polynomials
   
   This post is the first of a series of about polynomials.  I'm using
   it as a mean to explore the rust programming language (especially
   how generic traits relate to algebra) while also learning math
   subjects.
+  
+  The code in this post is available [[https://github.com/noiseOnTheNet/polynomials001][on GitHub]] with MIT license.
   
   Polynomials are a fundamental mathematical entity used for a number
   of interesting applications including:
@@ -107,14 +114,19 @@
         coeff : Vec<T>
     }
 
-    impl<T: Mul<Output = T> + Add<Output = T> + Copy> Poly<T>{
+    // I need to guarantee that a type has a neutral element for sum
+    pub trait Zero{
+        fn zero() -> Self;
+    }
+
+    impl<T: Mul<Output = T> + Add<Output = T> + Copy + Zero> Poly<T>{
         pub fn new(coeff : Vec<T>) -> Poly<T>{
             Poly{ coeff:coeff }
         }
-        pub fn eval(self : &Poly<T>, x : T, zero : T) -> T {
+        pub fn eval(self : &Poly<T>, x : T) -> T {
             self.coeff.iter()
                 .rev()
-                .fold(zero, |acc, c| acc * x + *c)
+                .fold(T::zero(), |acc, c| acc * x + *c)
         }
     }
 
@@ -127,6 +139,25 @@
             write!(f, "{}", result.join(" + "))
         }
     }
+
+    // here are a couple of implementation of general use
+    impl Zero for u32{
+        fn zero() -> u32 {
+            0
+        }
+    }
+
+    impl Zero for i32{
+        fn zero() -> i32 {
+            0
+        }
+    }
+
+    impl Zero for f32{
+        fn zero() -> f32 {
+            0.0
+        }
+    }
   #+end_src
 
   let's check if the current implementation works
@@ -135,7 +166,7 @@
     #[test]
     fn test_evaluation() {
         let p = Poly::new(vec![1,2,3]);
-        assert_eq!(p.eval(10,0), 321);
+        assert_eq!(p.eval(10), 321);
     }
 
     #[test]
@@ -163,23 +194,82 @@
 
     <<poly1-struct>>
   #+end_src
+* a polynomial can be a function too
+   Current implementations of rust expose some traits to pass
+   functions and lambdas as objects in the ~std::ops~ module:
+   - ~Fn~ when the data structure is borrowed without mutability
+   - ~FnMut~ when the data structure is borrowed with mutability
+   - ~FnOne~ when the ownership is transferred to the data structure
+     
+   Today (Feb 2022) to implement these traits we need to use unstable
+   features
+   #+name: poly2-prelude
+   #+begin_src rust
+     #![feature(unboxed_closures)]
+     #![feature(fn_traits)]
+   #+end_src
+
+   The following code creates the needed trait implementations. It can be compiled with
+
+   #+begin_src bash
+   cargo +nightly build
+   #+end_src
+   
+   #+name: poly2-function-implementation
+   #+begin_src rust
+     use std::ops::{Fn,FnOnce,FnMut};
+
+     impl<T: Mul<Output = T> + Add<Output = T> + Copy + Zero> Fn<(T, )> for Poly<T> {
+         extern "rust-call" fn call(&self, args: (T,)) -> T {
+             self.eval(args.0)
+         }
+     }
+
+     impl<T: Mul<Output = T> + Add<Output = T> + Copy + Zero> FnMut<(T, )> for Poly<T> {
+         extern "rust-call" fn call_mut(&mut self, args: (T,)) -> T {
+             self.call(args)
+         }
+     }
+
+     impl<T: Mul<Output = T> + Add<Output = T> + Copy + Zero> FnOnce<(T, )> for Poly<T> {
+         type Output = T;
+
+         extern "rust-call" fn call_once(self, args: (T,)) -> T {
+             self.call(args)
+         }
+     }
+   #+end_src
+
+   now we can call the polynomial directly as a function. let's add a
+   few test also here:
+   
+   #+name: poly2-test
+  #+begin_src rust
+    #[test]
+    fn test_call() {
+        let p = Poly::new(vec![1,2,3]);
+        assert_eq!(p(10), 321);
+    }
+  #+end_src
+
 * let's see how it looks like
    I'm going to plot a few polynomials using the popular ~plotters~
    library.
 
    #+begin_src rust :tangle ../examples/plot_example.rs
      use plotters::prelude::*;
-     use poly;
+     use poly::poly2::*;
+
 
      fn main() -> Result<(), Box<dyn std::error::Error>> {
 
          //polynomial definition
-         let p0 = poly::poly1::Poly::new(vec![0.0, 2.0, 0.0, -3.0]);
+         let p0 = Poly::new(vec![0.0, 2.0, 0.0, -3.0]);
 
          //start of the plot
          let root = BitMapBackend::new("post002_plot0.png", (640, 480)).into_drawing_area();
          root.fill(&WHITE)?;
-    
+
          //the polynomial is formatted in the caption
          let mut chart = ChartBuilder::on(&root)
              .caption(format!("y={}",p0), ("sans-serif", 25).into_font())
@@ -194,7 +284,7 @@
          //the polynomial is formatted in the plot label
          chart
              .draw_series(LineSeries::new(
-                 (-50..=50).map(|x| x as f32 / 50.0).map(|x| (x, p0.eval(x,0.0))),
+                 (-50..=50).map(|x| x as f32 / 50.0).map(|x| (x, p0(x))),
                  &RED,
              ))?
              .label(format!("y = {}",p0))
@@ -210,13 +300,23 @@
      }
    #+end_src
 
+   #+ATTR_HTML: :style float:center;
    [[file:post002_plot0.png]]
+   # post002_plot0.png https://i0.wp.com/noiseonthenet.space/noise/wp-content/uploads/2022/01/post002_plot0.png
    
-   This code was used to create the post initial image
+   This code was used to create the post initial image.
+
+   It uses the famous Taylor series expansion of the ~sin~
+
+   \begin{equation}
+   sin(x) = \sum_{n=0}^{\infty} \frac{(-1)^n}{(2n+1)!}x^{2n+1}
+   \end{equation}
+   
    #+begin_src rust :tangle ../examples/plot_example2.rs
      use plotters::prelude::*;
-     use poly;
+     use poly::poly2::*;
 
+     // this evaluates the factorial of n
      fn fac(n : i32) -> i32{
          let mut result = 1;
          for i in 1..=n{
@@ -252,10 +352,10 @@
                           sign/nf
                       })
                  .collect();
-             let p0 = poly::poly1::Poly::new(coeff);
+             let p0 = Poly::new(coeff);
              chart
                  .draw_series(LineSeries::new(
-                     (-50..=50).map(|x| x as f32 * 7.0 / 50.0).map(|x| (x, p0.eval(x,0.0))),
+                     (-50..=50).map(|x| x as f32 * 7.0 / 50.0).map(|x| (x, p0(x))),
                      &color,
                  ))?
                  .label(format!("sin{}",deg))
@@ -277,32 +377,11 @@
          Ok(())
      }
    #+end_src
-* a polynomial can be a function too
-   Current implementations of rust expose some traits to pass
-   functions and lambdas as objects in the ~std::ops~ module:
-   - ~Fn~ when the data structure is borrowed without mutability
-   - ~FnMut~ when the data structure is borrowed with mutability
-   - ~FnOne~ when the ownership is transferred to the data structure
-     
-   Unfortunately as for today (January 2022) there is no way to
-   implement these traits from an object even using unstable features
-   #+name: poly2-prelude
-   #+begin_src rust
-     #![feature(unboxed_closures, fn_traits)]
-   #+end_src
+* conclusions
+  Polynomials are simple yet powerful structures which can dig into a
+  language syntax and features.
 
-   This code does not compile but it's my best attempt to shape how it
-   should look like
-   #+name: poly2-function-implementation
-   #+begin_src rust
-     use std::ops::Fn;
-     impl<T> Fn<(T, )> for Poly<T>{
-         type Output = T;
-         extern "rust-call" fn call(&self, args : (T,)){
-             self.eval(args[0])
-         }
-     }
-   #+end_src
+  This is just the beginning of this journey: stay tuned for more.
   #+begin_src rust :noweb tangle :tangle ../src/poly2.rs :exports none
     #[cfg(test)]
     mod tests {
@@ -310,6 +389,8 @@
         <<poly1-test-display>>
 
         <<poly1-test>>
+        
+        <<poly2-test>>
     }
 
     <<poly1-struct>>
@@ -317,7 +398,9 @@
     <<poly2-function-implementation>>
   #+end_src
   #+begin_src rust :noweb tangle :tangle ../src/lib.rs :exports none
+    <<poly2-prelude>>
     pub mod poly0;
     pub mod poly1;
+    pub mod poly2;
     //use poly1::*;
   #+end_src
