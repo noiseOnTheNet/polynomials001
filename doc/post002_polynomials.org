@@ -31,15 +31,15 @@
   I'm going to work with monovariate polynomials, i.e. polynomials of
   one variable only
 * the structure
-  a polynomial is completely defined by a string of values in a
-  field. These represents the polynomial coefficient from the lowest
+  a polynomial is completely defined by a vector of values in a
+  ring. These represents the polynomial coefficient from the lowest
   to the highest grade (let's call it $n$); the highest grade
-  coeddicient is supposed to be different from the zero of the field,
+  coeddicient is supposed to be different from the zero of the ring,
   and all coefficient of degree greather than $n$ are supposed to be
   zero.
   
   Main operation needed to define a polynomial are sum and
-  multiplication thus it can be possible to use fields different from
+  multiplication thus it can be possible to use rings different from
   usual built-in types (integer and floating point numbers) as long as
   multiplication and sum are defined.
 
@@ -84,12 +84,12 @@
     <<poly0-test>>
   #+end_src
 * the basic operations
-   I'd like to evaluate a polynomial in a point of its field. In order
+   I'd like to evaluate a polynomial in a point of its coefficients' ring. In order
    to do that I need to use the following properties:
    - sum is defined
    - multiplication is defined
    - there is a zero (neutral element of the sum)
-   - the field values can be copied (i.e. there is a way to safely
+   - the ring values can be copied (i.e. there is a way to safely
      copy their binary representation)
 
    In order to evaluate the value of a polynomial of degree n I will
